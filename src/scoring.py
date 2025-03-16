@@ -45,18 +45,18 @@ def establish_key_dict(answer_keys: data_exporting.OutputSheet
         raise ValueError(
             "Invalid key matrix passed to scoring functions. Answers columns must be named 'Q1' through 'QN'."
         )
-
-    return {
-        get_key_form_code(answer_keys, index): key[answers_start_index:]
+    key_scores = {
+        get_key_form_code(answer_keys, index): list(zip(key[answers_start_index:], answer_keys.scores[index]))
         for index, key in enumerate(answer_keys.data[1:])
     }
+    return key_scores
 
 
 def score_results(results: data_exporting.OutputSheet,
                   answer_keys: data_exporting.OutputSheet,
                   num_questions: int) -> data_exporting.OutputSheet:
     answers = results.data
-    keys = establish_key_dict(answer_keys)
+    keys_scores = establish_key_dict(answer_keys)
     form_code_column_name = data_exporting.COLUMN_NAMES[
         grid_info.Field.TEST_FORM_CODE]
     form_code_index = list_utils.find_index(answers[0], form_code_column_name)
@@ -65,6 +65,7 @@ def score_results(results: data_exporting.OutputSheet,
     virtual_fields: tp.List[grid_info.RealOrVirtualField] = [
         grid_info.VirtualField.SCORE, grid_info.VirtualField.POINTS
     ]
+    num_questions = max([len(x) for x in keys_scores.values()])
     columns = results.field_columns + virtual_fields
     scored_results = data_exporting.OutputSheet(columns, num_questions)
 
@@ -74,11 +75,14 @@ def score_results(results: data_exporting.OutputSheet,
             for k, v in zip(results.field_columns, exam[:answers_start_index])
         }
         form_code = exam[form_code_index]
+        print(form_code)
         try:
-            if "*" in keys:
-                key = keys["*"]
+            if "*" in keys_scores:
+                key, scores = zip(*keys_scores["*"])
             else:
-                key = keys[form_code]
+                key, scores = zip(*keys_scores[form_code])
+            if len(scores) == 0:
+                scores = [1.] * len(key)
         except KeyError:
             fields[grid_info.VirtualField.
                    SCORE] = data_exporting.KEY_NOT_FOUND_MESSAGE
@@ -87,8 +91,8 @@ def score_results(results: data_exporting.OutputSheet,
             scored_answers = []
         else:
             scored_answers = [
-                int(actual == correct)
-                for actual, correct in zip(exam[answers_start_index:], key)
+                grade_answer(answer, correct, score)
+                for answer, correct, score in zip(exam[answers_start_index:], key, scores)
             ]
             fields[grid_info.VirtualField.SCORE] = str(
                 round(math_utils.mean(scored_answers) * 100, 2))
@@ -112,3 +116,14 @@ def verify_answer_key_sheet(file_path: pathlib.Path) -> bool:
         return True
     except Exception:
         return False
+
+def grade_answer(answer:str, correct:str, score:float) -> float:
+    if len(correct) == 1:
+        return int(answer == correct) * score
+    elif correct.startswith("{") and correct.endswith("}"):
+        correct_set = set(correct.strip("{}"))
+        return int(answer in correct_set) * score
+    elif correct == "*":
+        return score
+    else:
+        raise NotImplementedError()

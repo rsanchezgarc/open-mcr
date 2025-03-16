@@ -79,3 +79,14 @@ if __name__ == '__main__':
                   form_variant,
                   None,
                   files_timestamp)
+
+
+"""
+/mnt/c/Users/ruben.sanchezgarcia/Downloads/AI_ML_groupA_answers/
+/mnt/c/Users/ruben.sanchezgarcia/Downloads/AI_ML_groupA_correction/
+--variant
+75
+--empty
+--anskey
+/mnt/c/Users/ruben.sanchezgarcia/Downloads/midterm_1_answers.csv
+"""

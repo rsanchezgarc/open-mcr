@@ -71,6 +71,9 @@ class OutputSheet():
         self.data = [field_column_names + answer_columns]
         self.row_count = 0
 
+        self.contain_scores = False
+        self.scores = []
+
     def save(self, path: pathlib.PurePath, filebasename: str, sort: bool,
              timestamp: tp.Optional[datetime], transpose: bool = False) -> pathlib.PurePath:
         if sort:
@@ -116,7 +119,7 @@ class OutputSheet():
         self.data = [col_names] + data
 
     def add(self, fields: tp.Dict[RealOrVirtualField, str],
-            answers: tp.List[str]):
+            answers: tp.List[str], scores:tp.Optional[float]=None):
         row: tp.List[str] = []
         for column in self.field_columns:
             try:
@@ -124,6 +127,8 @@ class OutputSheet():
             except KeyError:
                 row.append('')
         self.data.append(row + list_utils.strip_all(answers))
+        if scores is not None:
+            self.scores.append([float(x) for x in scores])
         self.row_count = len(self.data) - 1
 
     def add_file(self, csvfile: pathlib.Path):
@@ -131,6 +136,13 @@ class OutputSheet():
             reader = csv.reader(file)
             names = next(reader)
             # The fields that correspond with the columns
+            if "P1" in names:
+                self.contain_scores = True
+                last_index = names.index("P1")
+            else:
+                self.contain_scores = False
+                last_index = None
+
             keys: tp.List[tp.Union[RealOrVirtualField, None]] = []
             for name in names:
                 try:
@@ -145,8 +157,12 @@ class OutputSheet():
                     for key, value in list(zip(keys, row))
                     [:self.first_question_column_index] if key is not None
                 }
-                answers = row[self.first_question_column_index:]
-                self.add(fields, answers)
+                answers = row[self.first_question_column_index:last_index]
+                if last_index is not None:
+                    scores = row[last_index:]
+                else:
+                    scores = None
+                self.add(fields, answers, scores)
 
     def clean_up(self, replace_empty_with: str = ""):
         """Removes the extra headings from the heading row and replaces blank
