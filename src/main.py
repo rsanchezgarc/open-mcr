@@ -82,11 +82,17 @@ if __name__ == '__main__':
 
 
 """
-/mnt/c/Users/ruben.sanchezgarcia/Downloads/AI_ML_groupA_answers/
-/mnt/c/Users/ruben.sanchezgarcia/Downloads/AI_ML_groupA_correction/
---variant
-75
---empty
---anskey
-/mnt/c/Users/ruben.sanchezgarcia/Downloads/midterm_1_answers.csv
+python scripts/pdf2pngs.py \
+   /mnt/c/Users/ruben.sanchezgarcia/Downloads/AI_ML_groupMorning_answers.pdf \
+   -o /mnt/c/Users/ruben.sanchezgarcia/Downloads/AI_ML_groupMorning_answers/
+
+python src/main.py \
+/mnt/c/Users/ruben.sanchezgarcia/Downloads/AI_ML_groupMorning_answers/  \
+/mnt/c/Users/ruben.sanchezgarcia/Downloads/AI_ML_groupMorning_corrections/ \
+--variant 75 \
+--empty \
+--anskey /mnt/c/Users/ruben.sanchezgarcia/Downloads/midterm_Morning_answers.csv \
+--mcta   --disable-timestamps
+ #Empty changes student empty answer to G
+
 """

@@ -4,4 +4,6 @@ numpy==1.26.0
 opencv-python==4.11
 flake8==3.7.8
 yapf==0.28.0
+pdf2image==1.17
 pytest==6.2.5
+pandas==2.2.3

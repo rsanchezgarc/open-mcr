@@ -2,6 +2,8 @@ import csv
 import pathlib
 import typing as tp
 
+import numpy as np
+
 import data_exporting
 import grid_info
 import list_utils
@@ -90,13 +92,22 @@ def score_results(results: data_exporting.OutputSheet,
                    POINTS] = data_exporting.KEY_NOT_FOUND_MESSAGE
             scored_answers = []
         else:
+            #print(exam[answers_start_index:], key, scores)
             scored_answers = [
                 grade_answer(answer, correct, score)
                 for answer, correct, score in zip(exam[answers_start_index:], key, scores)
             ]
+            #TODO: implement the logic to cancel a question
+            key_scores = np.array(scores)
+            nan_mask = np.isnan(scored_answers)
+            max_score = np.sum(key_scores[~nan_mask])
+            raw_score = np.nansum(scored_answers)
+            score = raw_score / max_score
+
             fields[grid_info.VirtualField.SCORE] = str(
-                round(math_utils.mean(scored_answers) * 100, 2))
-            fields[grid_info.VirtualField.POINTS] = str(sum(scored_answers))
+                round(score * 100, 2))
+            fields[grid_info.VirtualField.POINTS] = str(
+                round(np.sum(key_scores) * score, 2))
         string_scored_answers = [str(s) for s in scored_answers]
         scored_results.add(fields, string_scored_answers)
 
@@ -117,13 +128,39 @@ def verify_answer_key_sheet(file_path: pathlib.Path) -> bool:
     except Exception:
         return False
 
-def grade_answer(answer:str, correct:str, score:float) -> float:
-    if len(correct) == 1:
-        return int(answer == correct) * score
-    elif correct.startswith("{") and correct.endswith("}"):
-        correct_set = set(correct.strip("{}"))
-        return int(answer in correct_set) * score
-    elif correct == "*":
-        return score
+def _extract_with_multiple(s:str):
+    if s.startswith("[") and s.endswith("]"):
+        correct_set = set(s.strip("[]").split("|"))
+        return correct_set
     else:
-        raise NotImplementedError()
+        return s
+def grade_answer(answer:str, correct:str, score:float) -> float:
+    correct = _extract_with_multiple(correct)
+    if correct == "*":
+        return np.nan
+    elif len(correct) == 1:
+        return int(answer == correct) * score
+    elif isinstance(correct, set):
+        correct_set = correct
+        answer_set = _extract_with_multiple(answer)
+        if isinstance(answer_set, set):
+            answer_set = {answer_set}
+        return int(bool(len(correct_set.intersection(answer_set)))) * score
+
+    elif correct.startswith("*"):
+        correct = correct.replace("*", "")
+        if len(correct) == 1:
+            if answer == correct:
+                return score
+            else:
+                return np.nan
+        elif correct.startswith("[") and correct.endswith("]"):
+            correct_set = set(correct.strip("[]"))
+            if answer in correct_set:
+                return score
+            else:
+                return np.nan
+        else:
+            raise NotImplementedError(f"correct *{correct} not implemented.")
+    else:
+        raise NotImplementedError(f"correct {correct} not implemented.")
