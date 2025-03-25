@@ -92,7 +92,12 @@ python src/main.py \
 --variant 75 \
 --empty \
 --anskey /mnt/c/Users/ruben.sanchezgarcia/Downloads/midterm_Morning_answers.csv \
---mcta   --disable-timestamps
+--disable-timestamps
  #Empty changes student empty answer to G
 
+
+python scripts/join_csvs.py -f1 /mnt/c/Users/ruben.sanchezgarcia/Downloads/AI_ML_groupAfternoon_corrections/scores.csv \
+-f2  /mnt/c/Users/ruben.sanchezgarcia/Downloads/AI_ML_groupAfternoon_corrections/groupAfternoon_openQ_grade.csv \
+-o  /mnt/c/Users/ruben.sanchezgarcia/Downloads/AI_ML_groupAfternoon_corrections/nonames_test_and_open_afternoon.csv  \
+-m 25 --anonymize
 """
